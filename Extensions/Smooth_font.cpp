@@ -53,13 +53,8 @@ void TFT_eSPI::unloadFont( void )
 // Expects file to be open
 void TFT_eSPI::drawGlyph(uint16_t code)
 {
-  if (code < 0x21)
+  if (code < 0x20)
   {
-    if (code == 0x20) {
-      cursor_x += sf->gFont.spaceWidth;
-      return;
-    }
-
     if (code == '\n') {
       cursor_x = 0;
       cursor_y += sf->gFont.yAdvance;
@@ -73,100 +68,82 @@ void TFT_eSPI::drawGlyph(uint16_t code)
   
   uint16_t fg = textcolor;
   uint16_t bg = textbgcolor;
+  uint8_t xAdvance = (found) ?  sf->gxAdvance[gNum] : sf->gFont.spaceWidth + 4;
 
-  if (found)
+  uint16_t bitmapSize = sf->gFont.yAdvance * xAdvance;
+  uint16_t  * bitmap = (uint16_t *) malloc(bitmapSize * 2);
+
+  for (uint16_t b = 0; b < bitmapSize; b++) {
+    bitmap[b] = bg;
+  }
+
+
+  if (textwrapX && (cursor_x + sf->gWidth[gNum] + sf->gdX[gNum] > _width))
   {
+    cursor_y += sf->gFont.yAdvance;
+    cursor_x = 0;
+  }
+  if (textwrapY && ((cursor_y + sf->gFont.yAdvance) >= _height)) cursor_y = 0;
+  if (cursor_x == 0) cursor_x -= sf->gdX[gNum];
 
-    if (textwrapX && (cursor_x + sf->gWidth[gNum] + sf->gdX[gNum] > _width))
-    {
-      cursor_y += sf->gFont.yAdvance;
-      cursor_x = 0;
-    }
-    if (textwrapY && ((cursor_y + sf->gFont.yAdvance) >= _height)) cursor_y = 0;
-    if (cursor_x == 0) cursor_x -= sf->gdX[gNum];
 
-    uint8_t* pbuffer = nullptr;
-    const uint8_t* gPtr = (const uint8_t*) sf->gFont.gArray;
+  uint16_t size = sf->gWidth[gNum] * sf->gHeight[gNum];
+  uint8_t* gBuffer = nullptr;
+  const uint8_t* gPtr = (const uint8_t*) sf->gFont.gArray;
+  
 
 #ifdef FONT_FS_AVAILABLE
-    if (sf->fs_font)
-    {
-      sf->fontFile.seek(sf->gBitmap[gNum], fs::SeekSet); // This is taking >30ms for a significant position shift
-      pbuffer =  (uint8_t*)malloc(sf->gWidth[gNum]);
-    }
+  if (sf->fs_font)
+  {
+    sf->fontFile.seek(sf->gBitmap[gNum], fs::SeekSet); // This is taking >30ms for a significant position shift
+    gBuffer =  (uint8_t*)malloc(size);
+    sf->fontFile.read(gBuffer, size);
+  }
 #endif
 
-    int16_t  xs = 0;
-    uint32_t dl = 0;
-    uint8_t pixel;
 
-    int16_t cy = cursor_y + sf->gFont.maxAscent - sf->gdY[gNum];
-    int16_t cx = cursor_x + sf->gdX[gNum];
+  uint8_t pixel;
 
-    startWrite(); // Avoid slow ESP32 transaction overhead for every pixel
+  int16_t cy = sf->gFont.maxAscent - sf->gdY[gNum];
+  int16_t cx = sf->gdX[gNum];
 
-    for (int y = 0; y < sf->gHeight[gNum]; y++)
+  for (int y = 0; y < sf->gHeight[gNum]; y++)
+  {
+    for (int x = 0; x < sf->gWidth[gNum]; x++)
     {
 #ifdef FONT_FS_AVAILABLE
-      if (sf->fs_font) {
-        if (sf->spiffs)
-        {
-          sf->fontFile.read(pbuffer, sf->gWidth[gNum]);
-          //Serial.println("SPIFFS");
-        }
-        else
-        {
-          endWrite();    // Release SPI for SD card transaction
-          sf->fontFile.read(pbuffer,sf-> gWidth[gNum]);
-          startWrite();  // Re-start SPI for TFT transaction
-          //Serial.println("Not SPIFFS");
-        }
-      }
+      if (sf->fs_font) pixel = gBuffer[x + sf->gWidth[gNum] * y];
+      else
 #endif
-      for (int x = 0; x < sf->gWidth[gNum]; x++)
+      pixel = pgm_read_byte(gPtr + sf->gBitmap[gNum] + x + sf->gWidth[gNum] * y);
+
+      if (pixel)
       {
-#ifdef FONT_FS_AVAILABLE
-        if (sf->fs_font) pixel = pbuffer[x];
-        else
-#endif
-        pixel = pgm_read_byte(gPtr + sf->gBitmap[gNum] + x + sf->gWidth[gNum] * y);
-
-        if (pixel)
+        if (pixel == 0xFF)
         {
-          if (pixel != 0xFF)
-          {
-            if (dl) {
-              if (dl==1) drawPixel(xs, y + cy, fg);
-              else drawFastHLine( xs, y + cy, dl, fg);
-              dl = 0;
-            }
-            if (getColor) bg = getColor(x + cx, y + cy);
-            drawPixel(x + cx, y + cy, alphaBlend(pixel, fg, bg));
-          }
-          else
-          {
-            if (dl==0) xs = x + cx;
-            dl++;
-          }
+          bitmap[((y +cy) * xAdvance)  +x + cx ] = fg;
         }
         else
         {
-          if (dl) { drawFastHLine( xs, y + cy, dl, fg); dl = 0; }
+           bitmap[((y +cy) * xAdvance)  +x + cx ] = alphaBlend( pixel, fg, bg);
+
         }
       }
-      if (dl) { drawFastHLine( xs, y + cy, dl, fg); dl = 0; }
     }
+  }
 
-    if (pbuffer) free(pbuffer);
-    cursor_x += sf->gxAdvance[gNum];
-    endWrite();
+  _swapBytes = true;
+  pushImage(cursor_x, cursor_y, xAdvance, sf->gFont.yAdvance, bitmap);
+
+  cursor_x += xAdvance;
+  
+  if (bitmap) {
+    free(bitmap);
   }
-  else
-  {
-    // Not a Unicode in font so draw a rectangle and move on cursor
-    drawRect(cursor_x, cursor_y + sf->gFont.maxAscent - sf->gFont.ascent, sf->gFont.spaceWidth, sf->gFont.ascent, fg);
-    cursor_x += sf->gFont.spaceWidth + 1;
+  if (gBuffer) {
+    free(gBuffer);
   }
+
 }
 
 /***************************************************************************************

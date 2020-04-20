@@ -215,7 +215,9 @@ void TFT_eSPI_SmoothFont::loadMetrics(void)
 #endif
       }
     }
-    
+    if (gdY[gNum] > gFont.height) {
+      gdY[gNum] = gFont.height;
+    }
 
     // Different glyph sets have different descent values not always based on "p", so get maximum glyph descent
     if (((int16_t)gHeight[gNum] - (int16_t)gdY[gNum]) > gFont.maxDescent)
