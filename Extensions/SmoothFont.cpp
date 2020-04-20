@@ -119,7 +119,7 @@ void TFT_eSPI_SmoothFont::loadFont(String fontName, bool flash)
 
   gFont.gCount   = (uint16_t)readInt32(); // glyph count in file
                              readInt32(); // vlw encoder version - discard
-  gFont.yAdvance = (uint16_t)readInt32(); // Font size in points, not pixels
+  gFont.height = (uint16_t)readInt32(); // Font size in points, not pixels
                              readInt32(); // discard
   gFont.ascent   = (uint16_t)readInt32(); // top of "d"
   gFont.descent  = (uint16_t)readInt32(); // bottom of "p"
@@ -191,6 +191,10 @@ void TFT_eSPI_SmoothFont::loadMetrics(void)
     gdX[gNum]       =   (int8_t)readInt32(); // x delta from cursor
     readInt32(); // ignored
 
+
+    if (gUnicode[gNum] == 0x20) {
+      gFont.spaceWidth = gxAdvance[gNum];
+    }
     //Serial.print("Unicode = 0x"); Serial.print(gUnicode[gNum], HEX); Serial.print(", gHeight  = "); Serial.println(gHeight[gNum]);
     //Serial.print("Unicode = 0x"); Serial.print(gUnicode[gNum], HEX); Serial.print(", gWidth  = "); Serial.println(gWidth[gNum]);
     //Serial.print("Unicode = 0x"); Serial.print(gUnicode[gNum], HEX); Serial.print(", gxAdvance  = "); Serial.println(gxAdvance[gNum]);
@@ -203,7 +207,7 @@ void TFT_eSPI_SmoothFont::loadMetrics(void)
     if (gdY[gNum] > gFont.maxAscent)
     {
       // Try to avoid UTF coding values and characters that tend to give duff values
-      if (((gUnicode[gNum] > 0x20) && (gUnicode[gNum] < 0x7F)) || (gUnicode[gNum] > 0xA0))
+      if ((gUnicode[gNum] > 0x20) && (gUnicode[gNum] != 0xA0))
       {
         gFont.maxAscent   = gdY[gNum];
 #ifdef SHOW_ASCENT_DESCENT
@@ -213,18 +217,18 @@ void TFT_eSPI_SmoothFont::loadMetrics(void)
     }
     
 
-//     // Different glyph sets have different descent values not always based on "p", so get maximum glyph descent
-//     if (((int16_t)gHeight[gNum] - (int16_t)gdY[gNum]) > gFont.maxDescent)
-//     {
-//       // Avoid UTF coding values and characters that tend to give duff values
-//       if (((gUnicode[gNum] > 0x20) && (gUnicode[gNum] < 0xA0) && (gUnicode[gNum] != 0x7F)) || (gUnicode[gNum] > 0xFF))
-//       {
-//         gFont.maxDescent   = gHeight[gNum] - gdY[gNum];
-// #ifdef SHOW_ASCENT_DESCENT
-//         Serial.print("Unicode = 0x"); Serial.print(gUnicode[gNum], HEX); Serial.print(", maxDescent = "); Serial.println(gHeight[gNum] - gdY[gNum]);
-// #endif
-//       }
-//     }
+    // Different glyph sets have different descent values not always based on "p", so get maximum glyph descent
+    if (((int16_t)gHeight[gNum] - (int16_t)gdY[gNum]) > gFont.maxDescent)
+    {
+      // Avoid UTF coding values and characters that tend to give duff values
+      if ((gUnicode[gNum] > 0x20) && (gUnicode[gNum] != 0xA0))
+      {
+        gFont.maxDescent   = gHeight[gNum] - gdY[gNum];
+#ifdef SHOW_ASCENT_DESCENT
+        Serial.print("Unicode = 0x"); Serial.print(gUnicode[gNum], HEX); Serial.print(", maxDescent = "); Serial.println(gHeight[gNum] - gdY[gNum]);
+#endif
+      }
+    }
 
     gBitmap[gNum] = bitmapPtr;
 
@@ -236,7 +240,7 @@ void TFT_eSPI_SmoothFont::loadMetrics(void)
 
   gFont.yAdvance = gFont.maxAscent + gFont.maxDescent;
 
-  gFont.spaceWidth = (gFont.ascent + gFont.descent) * 2/7;  // Guess at space width
+  //gFont.spaceWidth = (gFont.ascent + gFont.descent) * 2/7;  // Guess at space width
 }
 
 
