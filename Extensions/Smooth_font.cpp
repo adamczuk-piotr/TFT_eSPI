@@ -98,6 +98,7 @@ void TFT_eSPI::drawGlyph(uint16_t code)
     sf->fontFile.seek(sf->gBitmap[gNum], fs::SeekSet); // This is taking >30ms for a significant position shift
     gBuffer =  (uint8_t*)malloc(size);
     sf->fontFile.read(gBuffer, size);
+  
   }
 #endif
 
@@ -105,7 +106,7 @@ void TFT_eSPI::drawGlyph(uint16_t code)
   uint8_t pixel;
 
   int16_t cy = sf->gFont.maxAscent - sf->gdY[gNum];
-  int16_t cx = sf->gdX[gNum];
+  int16_t cx = (sf->gdX[gNum] < 0) ? 0 : sf->gdX[gNum];
 
   for (int y = 0; y < sf->gHeight[gNum]; y++)
   {
@@ -126,13 +127,12 @@ void TFT_eSPI::drawGlyph(uint16_t code)
         else
         {
            bitmap[((y +cy) * xAdvance)  +x + cx ] = alphaBlend( pixel, fg, bg);
-
         }
       }
     }
   }
 
-  _swapBytes = true;
+  _swapBytes = true;//dosn't work without this
   pushImage(cursor_x, cursor_y, xAdvance, sf->gFont.yAdvance, bitmap);
 
   cursor_x += xAdvance;
