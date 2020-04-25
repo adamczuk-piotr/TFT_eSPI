@@ -6,7 +6,9 @@ class TFT_eSPI_SmoothFont {
  private:
   String filename;
  public:
-
+  virtual ~TFT_eSPI_SmoothFont() {
+    unloadFont();
+  };
   // These are for the new antialiased fonts
   void     loadFont(const uint8_t array[]);
 #ifdef FONT_FS_AVAILABLE
