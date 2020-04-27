@@ -18,6 +18,8 @@ class TFT_eSPI_SmoothFont {
   void     unloadFont( void );
   bool     getUnicodeIndex(uint16_t unicode, uint16_t *index);
 
+  bool     loaded() {return fontLoaded;};
+
  // This is for the whole font
   typedef struct
   {

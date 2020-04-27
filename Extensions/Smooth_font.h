@@ -12,7 +12,13 @@ protected:
 #endif
   void     loadFont(String fontName, bool flash = true);
 
-  void     setFont( TFT_eSPI_SmoothFont * font) { sf = font; fontLoaded = true;};
+  void     setFont( TFT_eSPI_SmoothFont * font) {
+               sf = font; 
+               if (sf != nullptr ){
+                 fontLoaded = sf->loaded();
+               }
+                  
+            };
   void     unloadFont( void );
 
   virtual void drawGlyph(uint16_t code);
