@@ -3247,18 +3247,14 @@ size_t TFT_eSPI::write(uint8_t utf8)
     //Serial.print("UniCode="); Serial.println(uniCode);
     //Serial.print("UTF8   ="); Serial.println(utf8);
 
-    //fontFile = SPIFFS.open( _gFontFilename, "r" );
+    if (drawGlyph(uniCode))
+    {
+      return 1;
+    }
+    else {
+      return 0;
+    }
 
-    //if(!fontFile)
-    //{
-    //  fontLoaded = false;
-    //  return 1;
-    //}
-
-    drawGlyph(uniCode);
-
-    //fontFile.close();
-    return 1;
   }
 #endif
 
@@ -3319,15 +3315,19 @@ size_t TFT_eSPI::write(uint8_t utf8)
 
   if (utf8 == '\n') {
     cursor_y += height;
-    cursor_x  = 0;
+    cursor_x  = _pLeft;
   }
   else {
-    if (textwrapX && (cursor_x + width * textsize > _width)) {
+    if (textwrapX && (cursor_x + width * textsize > _pRight)) {
       cursor_y += height;
-      cursor_x = 0;
+      cursor_x = _pLeft;
     }
-    if (textwrapY && (cursor_y >= (int32_t)_height)) cursor_y = 0;
+    if (textwrapY && (cursor_y >= (int32_t)_height)) {
+       cursor_y = _pTop;
+    }
+
     cursor_x += drawChar(uniCode, cursor_x, cursor_y, textfont);
+ 
   }
 
 //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

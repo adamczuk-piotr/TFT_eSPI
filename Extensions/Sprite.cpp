@@ -2192,14 +2192,14 @@ int16_t TFT_eSprite::drawChar(uint16_t uniCode, int32_t x, int32_t y, uint8_t fo
 ** Function name:           drawGlyph
 ** Description:             Write a character to the sprite cursor position
 *************************************************************************************x*/
-void TFT_eSprite::drawGlyph(uint16_t code)
+bool TFT_eSprite::drawGlyph(uint16_t code)
 {
   if (code < 0x21)
   {
     if (code == 0x20) {
       if (_created) this->cursor_x += sf->gFont.spaceWidth;
       else this->cursor_x += sf->gFont.spaceWidth;
-      return;
+      return true;
     }
 
     if (code == '\n') {
@@ -2208,14 +2208,14 @@ void TFT_eSprite::drawGlyph(uint16_t code)
         this->cursor_x = 0;
         this->cursor_y += sf->gFont.yAdvance;
         if (this->cursor_y >= _height) this->cursor_y = 0;
-        return;
+        return true;
       }
       else
       {
         cursor_x = 0;
         cursor_y += sf->gFont.yAdvance;
         if (cursor_y >= _height) cursor_y = 0;
-        return;
+        return true;
       }
     }
   }
@@ -2320,6 +2320,7 @@ void TFT_eSprite::drawGlyph(uint16_t code)
     drawRect(this->cursor_x, this->cursor_y + sf->gFont.maxAscent - sf->gFont.ascent, sf->gFont.spaceWidth, sf->gFont.ascent, fg);
     this->cursor_x += sf->gFont.spaceWidth + 1;
   }
+  return true;
 }
 
 

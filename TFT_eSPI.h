@@ -664,6 +664,20 @@ class TFT_eSPI : public Print {
   uint8_t  decoderState = 0;   // UTF8 decoder state        - not for user access
   uint16_t decoderBuffer;      // Unicode code-point buffer - not for user access
 
+  void setPrintBox( uint16_t left, uint16_t top, uint16_t right, uint16_t bottom) {
+    _pLeft = left;
+    _pTop = top;
+    _pRight = right;
+    _pBottom = bottom;
+    setCursor(left, top);
+  };
+
+  void clearPrintBox() {
+    _pLeft = 0;
+    _pTop = 0;
+    _pRight = TFT_WIDTH;
+    _pBottom = TFT_HEIGHT;
+  }
  //--------------------------------------- private ------------------------------------//
  private:
            // Legacy begin and end prototypes - deprecated TODO: delete
@@ -747,6 +761,10 @@ class TFT_eSPI : public Print {
   bool     _psram_enable; // Enable PSRAM use for library functions (TBD) and Sprites
 
   uint32_t _lastColor; // Buffered value of last colour used
+
+  uint16_t _pLeft = 0, _pTop = 0, _pRight = TFT_WIDTH, _pBottom = TFT_HEIGHT;
+
+
 
 #ifdef LOAD_GFXFF
   GFXfont  *gfxFont;

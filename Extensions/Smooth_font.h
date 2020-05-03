@@ -21,7 +21,7 @@ protected:
             };
   void     unloadFont( void );
 
-  virtual void drawGlyph(uint16_t code);
+  virtual bool drawGlyph(uint16_t code);
 
   void     showFont(uint32_t td);
 

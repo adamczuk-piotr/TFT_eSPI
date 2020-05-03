@@ -51,15 +51,15 @@ void TFT_eSPI::unloadFont( void )
 ** Description:             Write a character to the TFT cursor position
 *************************************************************************************x*/
 // Expects file to be open
-void TFT_eSPI::drawGlyph(uint16_t code)
+bool TFT_eSPI::drawGlyph(uint16_t code)
 {
   if (code < 0x20)
   {
     if (code == '\n') {
       cursor_x = 0;
-      cursor_y += sf->gFont.yAdvance;
-      if (cursor_y >= _height) cursor_y = 0;
-      return;
+      cursor_y += sf->gFont.height;
+      if (cursor_y >= _pBottom) cursor_y = _pTop;
+      return true;
     }
   }
 
@@ -70,22 +70,34 @@ void TFT_eSPI::drawGlyph(uint16_t code)
   uint16_t bg = textbgcolor;
   uint8_t xAdvance = (found) ?  sf->gxAdvance[gNum] : sf->gFont.spaceWidth + 4;
 
+
+
+  if (textwrapX && (cursor_x + sf->gWidth[gNum] + sf->gdX[gNum] > _pRight))
+  {
+    cursor_y += sf->gFont.yAdvance;
+    cursor_x = _pLeft;
+  }
+  
+  if (textwrapY && ((cursor_y + sf->gFont.yAdvance) >= _pBottom))
+  {
+     cursor_y = _pTop;
+  }
+
+  if (cursor_x == _pLeft) 
+  {
+    cursor_x -= sf->gdX[gNum];
+  }
+
+  if (cursor_x + sf->gWidth[gNum] + sf->gdX[gNum] > _pRight) {
+    return false;
+  }
+
   uint16_t bitmapSize = sf->gFont.yAdvance * xAdvance;
   uint16_t  * bitmap = (uint16_t *) malloc(bitmapSize * 2);
 
   for (uint16_t b = 0; b < bitmapSize; b++) {
     bitmap[b] = bg;
   }
-
-
-  if (textwrapX && (cursor_x + sf->gWidth[gNum] + sf->gdX[gNum] > _width))
-  {
-    cursor_y += sf->gFont.yAdvance;
-    cursor_x = 0;
-  }
-  if (textwrapY && ((cursor_y + sf->gFont.yAdvance) >= _height)) cursor_y = 0;
-  if (cursor_x == 0) cursor_x -= sf->gdX[gNum];
-
 
   uint16_t size = sf->gWidth[gNum] * sf->gHeight[gNum];
   uint8_t* gBuffer = nullptr;
@@ -143,7 +155,7 @@ void TFT_eSPI::drawGlyph(uint16_t code)
   if (gBuffer) {
     free(gBuffer);
   }
-
+  return true;
 }
 
 /***************************************************************************************
