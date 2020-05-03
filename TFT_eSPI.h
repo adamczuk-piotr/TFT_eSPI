@@ -675,8 +675,8 @@ class TFT_eSPI : public Print {
   void clearPrintBox() {
     _pLeft = 0;
     _pTop = 0;
-    _pRight = TFT_WIDTH;
-    _pBottom = TFT_HEIGHT;
+    _pRight = _w;
+    _pBottom = _h;
   }
  //--------------------------------------- private ------------------------------------//
  private:
