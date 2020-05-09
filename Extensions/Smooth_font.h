@@ -4,22 +4,19 @@ protected:
   TFT_eSPI_SmoothFont * sf = nullptr;
   bool     fontLoaded = false; // Flags when a anti-aliased font is loaded
 
- public:
-  // These are for the new antialiased fonts
-  void     loadFont(const uint8_t array[]);
-#ifdef FONT_FS_AVAILABLE
-  void     loadFont(String fontName, fs::FS &ffs);
-#endif
-  void     loadFont(String fontName, bool flash = true);
 
+
+public:
   void     setFont( TFT_eSPI_SmoothFont * font) {
                sf = font; 
                if (sf != nullptr ){
+                 sf->loadFont();
+                 Serial.println("Font loaded");
                  fontLoaded = sf->loaded();
                }
                   
             };
-  void     unloadFont( void );
+
 
   virtual bool drawGlyph(uint16_t code);
 

@@ -2252,14 +2252,11 @@ bool TFT_eSprite::drawGlyph(uint16_t code)
     }
 
     uint8_t* pbuffer = nullptr;
-    const uint8_t* gPtr = (const uint8_t*) sf->gFont.gArray;
 
-#ifdef FONT_FS_AVAILABLE
-    if (sf->fs_font) {
+
       sf->fontFile.seek(sf->gBitmap[gNum], fs::SeekSet); // This is slow for a significant position shift!
       pbuffer =  (uint8_t*)malloc(sf->gWidth[gNum]);
-    }
-#endif
+
 
     int16_t  xs = 0;
     uint16_t dl = 0;
@@ -2267,20 +2264,13 @@ bool TFT_eSprite::drawGlyph(uint16_t code)
 
     for (int32_t y = 0; y < sf->gHeight[gNum]; y++)
     {
-#ifdef FONT_FS_AVAILABLE
-      if (sf->fs_font) {
+
         sf->fontFile.read(pbuffer, sf->gWidth[gNum]);
-      }
-#endif
+
       for (int32_t x = 0; x < sf->gWidth[gNum]; x++)
       {
-#ifdef FONT_FS_AVAILABLE
-        if (sf->fs_font) {
-          pixel = pbuffer[x];
-        }
-        else
-#endif
-        pixel = pgm_read_byte(gPtr + sf->gBitmap[gNum] + x + sf->gWidth[gNum] * y);
+
+         pixel = pbuffer[x];
 
         if (pixel)
         {

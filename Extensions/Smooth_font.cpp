@@ -6,45 +6,7 @@
 // New anti-aliased (smoothed) font functions added below
 ////////////////////////////////////////////////////////////////////////////////////////
 
-/***************************************************************************************
-** Function name:           loadFont
-** Description:             loads parameters from a font vlw array in memory
-*************************************************************************************x*/
-void TFT_eSPI::loadFont(const uint8_t array[])
-{
-  loadFont("", false);
-}
 
-#ifdef FONT_FS_AVAILABLE
-/***************************************************************************************
-** Function name:           loadFont
-** Description:             loads parameters from a font vlw file
-*************************************************************************************x*/
-void TFT_eSPI::loadFont(String fontName, fs::FS &ffs)
-{
-  loadFont(fontName, false);
-}
-#endif
-
-/***************************************************************************************
-** Function name:           loadFont
-** Description:             loads parameters from a font vlw file
-*************************************************************************************x*/
-void TFT_eSPI::loadFont(String fontName, bool flash)
-{
-  sf->loadFont(fontName, flash);
-  fontLoaded = true;
-}
-
-
-/***************************************************************************************
-** Function name:           deleteMetrics
-** Description:             Delete the old glyph metrics and free up the memory
-*************************************************************************************x*/
-void TFT_eSPI::unloadFont( void )
-{
- fontLoaded = false;
-}
 
 /***************************************************************************************
 ** Function name:           drawGlyph
@@ -101,18 +63,11 @@ bool TFT_eSPI::drawGlyph(uint16_t code)
 
   uint16_t size = sf->gWidth[gNum] * sf->gHeight[gNum];
   uint8_t* gBuffer = nullptr;
-  const uint8_t* gPtr = (const uint8_t*) sf->gFont.gArray;
   
-
-#ifdef FONT_FS_AVAILABLE
-  if (sf->fs_font)
-  {
     sf->fontFile.seek(sf->gBitmap[gNum], fs::SeekSet); // This is taking >30ms for a significant position shift
     gBuffer =  (uint8_t*)malloc(size);
     sf->fontFile.read(gBuffer, size);
-  
-  }
-#endif
+
 
 
   uint8_t pixel;
@@ -124,11 +79,7 @@ bool TFT_eSPI::drawGlyph(uint16_t code)
   {
     for (int x = 0; x < sf->gWidth[gNum]; x++)
     {
-#ifdef FONT_FS_AVAILABLE
-      if (sf->fs_font) pixel = gBuffer[x + sf->gWidth[gNum] * y];
-      else
-#endif
-      pixel = pgm_read_byte(gPtr + sf->gBitmap[gNum] + x + sf->gWidth[gNum] * y);
+       pixel = gBuffer[x + sf->gWidth[gNum] * y];
 
       if (pixel)
       {
