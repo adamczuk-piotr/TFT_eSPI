@@ -9,7 +9,8 @@ class TFT_eSPI_SmoothFont {
 
   String    fontPath;
   bool      fontLoaded = false;
-  bool      metadataLoaded = false;
+  bool      _metadataLoaded = false;
+  unsigned long _lastLoadTime = 0L;
   void      loadMetrics(void);
   uint32_t  readInt32(void);
 
@@ -18,13 +19,17 @@ class TFT_eSPI_SmoothFont {
   TFT_eSPI_SmoothFont(String path) : fontPath(path){ };
   void   loadFont();
 
-  static TFT_eSPI_SmoothFont *  require(const String & path) {
+  static TFT_eSPI_SmoothFont *  const require(const String & path) {
 
-    if (TFT_eSPI_SmoothFont::Fonts.find(path) == TFT_eSPI_SmoothFont::Fonts.end()){
+    if (Fonts.find(path) == TFT_eSPI_SmoothFont::Fonts.end()){
+
       TFT_eSPI_SmoothFont::Fonts.insert({path, new TFT_eSPI_SmoothFont(path)});
     }
-    TFT_eSPI_SmoothFont::Fonts.at(path)->loadFont();
-    return TFT_eSPI_SmoothFont::Fonts.at(path);
+     auto font = TFT_eSPI_SmoothFont::Fonts.at(path);
+    if (!font->metadataLoaded()) {
+      font->loadFont();
+    }    
+    return font;
   };
 
 
@@ -38,6 +43,17 @@ class TFT_eSPI_SmoothFont {
   bool     getUnicodeIndex(uint16_t unicode, uint16_t *index);
 
   bool     loaded() {return fontLoaded;};
+  bool     metadataLoaded() {return _metadataLoaded;};
+  unsigned long lastLoadTime() {return _lastLoadTime;};
+
+  size_t   metricsSize() {
+      if (_metadataLoaded) {
+        return gFont.gCount * 12; //Allocated size
+      }
+      else {
+        return 0;
+      }
+  }
 
  // This is for the whole font
   typedef struct

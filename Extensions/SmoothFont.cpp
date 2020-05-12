@@ -71,7 +71,27 @@ void TFT_eSPI_SmoothFont::loadFont()
 
   */
 
+  _lastLoadTime = millis();//set access time
+
   if (fontLoaded) return;
+
+
+    String oldestFont;
+    unsigned long acessTime = 0-1;
+    uint8_t loadedFonts = 0;
+    for (auto & f : Fonts) {
+        if (f.second->loaded()) {
+          loadedFonts++;
+          if (f.second->lastLoadTime() < acessTime) {
+            acessTime = f.second->lastLoadTime();
+            oldestFont = f.first;
+          }
+        }
+       // Serial.printf("Font: %s, loaded: %d, size: %zu, access time: %lu \n", f.first.c_str(), (f.second->loaded()) ? 1 : 0, f.second->metricsSize(), _lastLoadTime);
+    }
+    if (loadedFonts > 3) {
+      Fonts.at(oldestFont)->unloadFont();
+    }
 
     // Avoid a crash on the ESP32 if the file does not exist
     if (fontFS.exists(fontPath) == false) {
@@ -86,7 +106,7 @@ void TFT_eSPI_SmoothFont::loadFont()
     fontFile.seek(0, fs::SeekSet);
   
     //Load metadata once
-    if (!metadataLoaded) {
+    if (!_metadataLoaded) {
       gFont.gCount   = (uint16_t)readInt32(); // glyph count in file
                                 readInt32(); // vlw encoder version - discard
       gFont.height = (uint16_t)readInt32(); // Font size in points, not pixels
@@ -144,7 +164,7 @@ void TFT_eSPI_SmoothFont::loadMetrics(void)
     gdX[gNum]       =   (int8_t)readInt32(); // x delta from cursor
     readInt32(); // ignored
 
-    if(!metadataLoaded) {
+    if(!_metadataLoaded) {
       if (gUnicode[gNum] == 0x20) {
         gFont.spaceWidth = gxAdvance[gNum];
       }
@@ -199,7 +219,7 @@ void TFT_eSPI_SmoothFont::loadMetrics(void)
 
 
   fontLoaded = true;
-  metadataLoaded = true;
+  _metadataLoaded = true;
 
 }
 

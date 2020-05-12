@@ -11,7 +11,6 @@ public:
                sf = font; 
                if (sf != nullptr ){
                  sf->loadFont();
-                 Serial.println("Font loaded");
                  fontLoaded = sf->loaded();
                }
                   
